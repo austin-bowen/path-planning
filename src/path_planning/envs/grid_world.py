@@ -1,5 +1,6 @@
 import os
 import time
+from random import randint
 from typing import Iterable, Literal
 
 import numpy as np
@@ -40,6 +41,8 @@ class GridWorld(Env):
         else:
             raise ValueError(f"directions must be 4 or 8. directions={directions}")
 
+        self._obstacles_seen: set[Node] = set()
+
     @classmethod
     def random(
         cls,
@@ -61,8 +64,17 @@ class GridWorld(Env):
     ) -> tuple["GridWorld", Node, Node]:
         term_size = os.get_terminal_size()
         r, c = term_size.lines - 4, (term_size.columns // 2) - 4
+
         start = (0, 0)
         goal = (r - 1, c - 1)
+        # start = (randint(0, r - 1), randint(0, c - 1))
+        # while (goal := (randint(0, r - 1), randint(0, c - 1))) == start:
+        #     pass
+
+        start = (r // 2, c // 5)
+        goal = (r // 2, c - start[1])
+        # start = (start, start)
+
         env = cls.random((r, c), start, goal, obstacle_prob, directions)
         return env, start, goal
 
@@ -83,14 +95,18 @@ class GridWorld(Env):
 
     def _is_open(self, node: Node) -> bool:
         row, col = node
-        return (
-            0 <= row < self.height
-            and 0 <= col < self.width
-            and not self.obstacle_map[row, col]
-        )
+
+        if not (0 <= row < self.height and 0 <= col < self.width):
+            return False
+
+        is_obstacle = self.obstacle_map[row, col]
+        if is_obstacle:
+            self._obstacles_seen.add(node)
+
+        return not is_obstacle
 
     def _get_cost(self, node0: Node, node1: Node) -> float:
-        return ((node0[0] - node1[0]) ** 2 + (node1[1] - node1[1]) ** 2) ** 0.5
+        return ((node0[0] - node1[0]) ** 2 + (node0[1] - node1[1]) ** 2) ** 0.5
 
 
 class GridWorldCliRenderer:
@@ -108,10 +124,13 @@ class GridWorldCliRenderer:
         w, h = env.width, env.height
         cells = [[" "] * w for _ in range(h)]
 
-        for r in range(h):
-            for c in range(w):
-                if env.obstacle_map[r, c]:
-                    cells[r][c] = "█"
+        # for r in range(h):
+        #     for c in range(w):
+        #         if env.obstacle_map[r, c]:
+        #             cells[r][c] = "█"
+
+        for r, c in env._obstacles_seen:
+            cells[r][c] = "█"
 
         for r, c in path or []:
             cells[r][c] = ":"

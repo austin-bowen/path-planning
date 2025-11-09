@@ -1,6 +1,7 @@
 from collections import defaultdict
 from collections.abc import Callable
 from math import inf
+from time import sleep
 
 import numpy as np
 
@@ -66,13 +67,14 @@ def euclidean_heuristic(point0: np.ndarray, point1: np.ndarray) -> float:
 
 
 def main() -> None:
-    renderer = GridWorldCliRenderer(wait_time=0.01)
+    renderer = GridWorldCliRenderer(wait_time=0.0)
     a_star = AStar()
     while True:
-        env, start, goal = GridWorld.random_full_screen(obstacle_prob=0.5, directions=8)
+        env, start, goal = GridWorld.random_full_screen(obstacle_prob=0.3, directions=4)
 
         path = a_star.search(env, start, goal, renderer=renderer)
         # print(path)
+        sleep(1)
 
 
 if __name__ == "__main__":
